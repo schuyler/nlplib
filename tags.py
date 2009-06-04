@@ -1,18 +1,11 @@
-from graph import Graph
-from stem import stem_text
+from graph import TextGraph
+from stem import Text
 
-import sys
+import sys, textwrap
 
-text = file(sys.argv[1]).read()
-
-graph = Graph()
-sentences = stem_text(text)
-for i in range(len(sentences)):
-    graph.add_node(i)
-    for stem in sentences[i]:
-        graph.add_node(stem)
-        graph.add_edge(stem, i)
-
-scored = graph.rank()
-print scored
-
+text = Text.from_file(sys.argv[1])
+graph = TextGraph(text)
+summary = graph.summary()
+print "\n".join(textwrap.wrap(summary))
+print
+print "Tags:", ", ".join(graph.tags())
