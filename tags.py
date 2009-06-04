@@ -1,5 +1,5 @@
 from graph import TextGraph
-from stem import Text
+from text import Text
 
 import sys, textwrap
 
