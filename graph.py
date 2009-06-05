@@ -1,4 +1,4 @@
-import sys
+import sys, math
 
 class Graph (object):
     def __init__ (self, damp=0.85):
@@ -26,15 +26,17 @@ class Graph (object):
         d = self.damp
         delta = 0.0
         for id, val in prev.items():
-            incoming = [prev[id2]/len(self.out[id2]) for id2,w in self._in[id]]
+            incoming = [prev[id2]*w/len(self.out[id2]) for id2,w in self._in[id]]
             score[id] = (1-d) + d * sum(incoming)
             delta += abs(score[id]-prev[id])
         return delta, score
 
-    def rank (self, threshold=0.05):
+    def rank (self, threshold=0.05, max_iterations = 100):
         delta = sys.maxint
         score = self.node
-        while delta > threshold:
+        iterations = 0
+        while delta > threshold and iterations < max_iterations:
+            iterations += 1
             delta, score = self.iterate(score)
         score = [(v,k) for k,v in score.items()]
         return list(reversed(sorted(score)))
@@ -45,11 +47,12 @@ class TextGraph (Graph):
         self.ranked = None
         self.text   = text
         for i in range(len(text)):
-            self.add_node(i)
+            self.add_node(i, 0.0)
             for stem in text.stems[i]:
-                self.add_node(stem)
+                self.add_node(stem, 0.0)
                 self.add_edge(stem, i)
-
+        self.node[0] = 1.0
+    
     def rank_sentences (self, t=0.05):
         if not self.ranked: self.ranked = self.rank(t)
         return [(w,s) for w,s in self.ranked if type(s) is int]
@@ -70,7 +73,7 @@ class TextGraph (Graph):
             items.append(n) 
             length += len(self.text[n])
             if length >= max_length: break
-        items.sort()
+        #items.sort()
         return " ".join([self.text[n] for n in items])
 
     def tags (self, count=7):

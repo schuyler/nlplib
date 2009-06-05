@@ -140,8 +140,7 @@ class VectorSet (dict):
     [(0, 6), (20, 0), (32, 5)]
     """
     def __setitem__ (self, key, vector):
-        if not isinstance(vector, Vector):
-            raise ValueError("value must be a Vector")
+        assert isinstance(vector, Vector)
         dict.__setitem__(self, key, vector)
 
     def nearest (self, vector0, n=10):
