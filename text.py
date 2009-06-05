@@ -1,31 +1,46 @@
-import nltk
+import language, stem
 import re, urllib2
 
-stopwords     = nltk.corpus.stopwords.words("english")
-word_tokenize = nltk.tokenize.word_tokenize
-sent_tokenize = nltk.data.load('tokenizers/punkt/english.pickle').tokenize
-stem_word     = nltk.stem.PorterStemmer().stem
+nonword       = re.compile(r'\W+')
+stem_word     = stem.Stemmer("en").stemWord
+stopwords     = language.WordList("stopwords.txt").words
+whitespace    = re.compile(r'\s+')
+word_tokenize = lambda s: whitespace.split(s)
+
+lc = language.LanguageChecker()
+def sent_tokenize (text):
+    sentences = []
+    for block in lc.find_text_blocks(text):
+        sentences.extend(lc.split_sentences(block))
+    return sentences
 
 class Text (list):
     def __init__ (self, text):
+        text = whitespace.sub(" ", text)
         self.extend(sent_tokenize(text))
         self.text       = text
-        self.tokens     = [word_tokenize(s) for s in self]
+        self.tokens     = filter(None, [word_tokenize(s) for s in self])
         self.stems      = []
         self.unstem     = {}
         self.stem()
     
     def stem (self):
+        unstem = {}
         for tokens in self.tokens:
-            words = [w.lower() for w in tokens if w.lower() not in stopwords]
+            words = [nonword.sub("", w.lower()) for w in tokens]
+            words = filter(lambda w: w not in stopwords, words)
             stems = []
             for word in words:
                 stem = stem_word(word)
+                if not stem: continue
                 stems.append(stem)
-                if stem not in self.unstem \
-                  or len(self.unstem[stem]) > len(word):
-                    self.unstem[stem] = word
+                unstem.setdefault(stem, {})
+                unstem[stem].setdefault(word, 0)
+                unstem[stem][word] += 1
             self.stems.append(stems)
+        for stem, words in unstem.items():
+            words = sorted([(c,w) for w,c in words.items()])
+            self.unstem[stem] = words[-1][1]
         
     def __str__ (self):
         return self.text 
@@ -40,31 +55,13 @@ class Text (list):
     def from_file (cls, fname):
         return cls(file(fname).read())
 
-from html import html2text_file
-class HTML (Text):
-    def __init__ (self, html):
-        try:
-            html = html.decode("utf-8")
-        except UnicodeDecodeError:
-            html = html.decode("latin-1")
-        # turn the html into markdown
-        markdown = html2text_file(html, None)
-        text = [t for t in markdown.split("\n\n")
-                    # if it starts with a word char
-                    if re.match("^\w", t)
-                    # and it contains something sentence-like
-                    and re.search("[A-Z][^\.!?]+[\.!?]", t)]
-        text = "\n".join(text)
-        # get rid of markdown link references
-        text = re.sub("\[\d*\]", "", text)
-        text = re.sub("[\[\]]", "", text)
-        Text.__init__(self, text)
-        self.text = markdown
-
     @classmethod
     def from_url (cls, url):
         request = urllib2.Request(url)
         request.add_header("User-Agent","Mozilla/5.0 (compatible)")
         page = urllib2.build_opener().open(request).read()
+        try:
+            page = page.decode("utf-8")
+        except UnicodeDecodeError:
+            page = page.decode("latin-1")
         return cls(page)
-
