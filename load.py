@@ -5,8 +5,7 @@ from text import Text
 
 import sys, textwrap, urllib2, os
 
-DB_URI = "sqlite:" + os.path.dirname(__file__) + "/memex.db"
-print DB_URI
+DB_URI = "sqlite:/tmp/memex.db"
 sqlhub.processConnection = connectionForURI(DB_URI)
 
 print >>sys.stderr, ">>> starting..."

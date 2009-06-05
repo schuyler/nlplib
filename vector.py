@@ -146,7 +146,7 @@ class VectorSet (dict):
     def nearest (self, vector0, n=10):
         heap = []
         for id, vector in self.items():
-            heappush(heap, (vector0 % vector, id))
+            heappush(heap, (vector0 / vector, id))
         return [heappop(heap) for i in range(min(n, len(heap)))]
 
 if __name__ == "__main__":
