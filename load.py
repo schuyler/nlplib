@@ -1,11 +1,12 @@
 from store import Document, sqlhub, connectionForURI
 from vector import Vector
 from graph import TextGraph
-from text import Text, HTML
+from text import Text
 
-import sys, textwrap, urllib2
+import sys, textwrap, urllib2, os
 
-DB_URI = "sqlite:/tmp/memex.db"
+DB_URI = "sqlite:" + os.path.dirname(__file__) + "/memex.db"
+print DB_URI
 sqlhub.processConnection = connectionForURI(DB_URI)
 
 print >>sys.stderr, ">>> starting..."
@@ -14,7 +15,7 @@ for line in sys.stdin.readlines():
     url = line.strip()
     print >>sys.stderr, ">>> reading", url
     if url.startswith("http://"):
-        text = HTML.from_url(url)
+        text = Text.from_url(url)
         content_type = "text/html"
     else:
         text = Text.from_file(url)
