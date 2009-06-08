@@ -35,6 +35,7 @@ class LanguageChecker (object):
 
     word_boundary = re.compile("[*(){}[\]:;,.!?~\s]+",re.S)
     html_tag = re.compile("<[^>]+>",re.S)
+    html_element = re.compile(r"<([^>])+>.+?</\1>",re.S)
     html_entity = re.compile("&#?(\w+);")
     dict_file = "/usr/share/dict/words"
 
@@ -72,6 +73,16 @@ class LanguageChecker (object):
     word     = re.compile(r'\w+')
     def split_sentences (self, text):
         return filter(self.word.match, self.sentence.split(text))
+
+    def find_sentences (self, text):
+        sentences = []
+        if self.html_element.search(text):
+            blocks = self.find_text_blocks(text)
+        else:
+            blocks = [text]
+        for block in blocks:
+            sentences.extend(self.split_sentences(block))
+        return [x.strip() for x in sentences]
 
     def is_english (self, text):
         tokens = self.word_boundary.split(text)
