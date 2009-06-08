@@ -1,23 +1,44 @@
 from sqlobject import *
+from vector import Vector
+from datetime import datetime
+import sys
 
 class BaseObject (SQLObject):
-    _lazyUpdate = True
-    _cacheValues = False
+    class sqlmeta:
+        lazyUpdate = True
+        cacheValues = False
 
 class Document (BaseObject):
-    title = UnicodeCol(notNull=1)
-    description = UnicodeCol(notNull=1)
-    url = StringCol(length=255, notNull=1)
-    source = StringCol(length=255, notNull=1)
-    content_type = StringCol(length=255)
-    tags = UnicodeCol(notNull=1)
+    guid = StringCol(length=255, notNull=True, alternateID=True)
+    doc_type = StringCol(length=255, notNull=True)
+    tags = UnicodeCol(length=255)
     vector = BLOBCol()
-    revision = IntCol(notNull=1)
-    current = BoolCol(notNull=1)
-    created_at = TimestampCol(default=None)
-    url_idx = DatabaseIndex('url')
-    content_type_idx = DatabaseIndex('content_type')
-    source_idx = DatabaseIndex('source')
+    data = PickleCol(notNull=True,default={})
+    doc_type_idx = DatabaseIndex('doc_type')
+
+    def _set_vector (self, vector):
+        return self._SO_set_vector(vector.tostring())
+
+    def _get_vector (self):
+        vector = Vector()
+        vector.fromstring(self._SO_get_vector())
+        return vector
+
+    def _set_tags (self, tags):
+        return self._SO_set_tags(",".join(tags))
+
+    def _get_tags (self, thunk):
+        return self._SO_get_tags().split(u",")
+
+class Link (BaseObject):
+    source = ForeignKey("Document")
+    target = ForeignKey("Document")
+
+class Feed (BaseObject):
+    document     = ForeignKey('Document', alternateID=True)
+    digest       = StringCol(length=40)
+    fetched_at   = DateTimeCol()
+    interval     = IntCol(default=3600)
 
 if __name__ == "__main__":
     import sys
