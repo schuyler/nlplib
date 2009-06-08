@@ -8,17 +8,13 @@ whitespace    = re.compile(r'\s+')
 word_tokenize = lambda s: whitespace.split(s)
 
 lc = language.LanguageChecker()
-def sent_tokenize (text):
-    sentences = []
-    for block in lc.find_text_blocks(text):
-        sentences.extend(lc.split_sentences(block))
-    return sentences
+sent_tokenize = lc.find_sentences
 
 class Text (list):
     def __init__ (self, text):
         text = whitespace.sub(" ", text)
         self.extend(sent_tokenize(text))
-        self.text       = text
+        self.text       = " ".join(self)
         self.tokens     = filter(None, [word_tokenize(s) for s in self])
         self.stems      = []
         self.unstem     = {}
